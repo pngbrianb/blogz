@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <form method='POST'>
+        <p><label>
+            Post Title: </p>
+            <p><input type="text" name='name' /><span class='error'>{{empty_name}}</span></p>
+        </label></p>
+        <label>
+            </p>Post Content:</p>
+            <p> <input type="text" name='content' /><span class='error'>{{empty_content}}</span></p>
+        </label>
+        <p><input type="submit" value='post' /></p>
+    </form>
+
+{% endblock %}
