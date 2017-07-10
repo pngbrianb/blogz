@@ -2,15 +2,21 @@
 
 {% block content %}
     <form method='POST'>
-        <p><label>
-            Post Title: </p>
-            <p><input type="text" name='name' /><span class='error'>{{empty_name}}</span></p>
-        </label></p>
+<br/>
+        <table>
+        <tr><label>
+            Post Title: </tr>
+            <tr><input type="text" name='name' /></tr>
+        </label> </table>
+        <table>
+<br/>
         <label>
-            </p>Post Content:</p>
-            <p> <input type="text" name='content' /><span class='error'>{{empty_content}}</span></p>
+            <tr>Post Content:</tr>
+            <tr> <input type="text" name='content' /></tr>
         </label>
-        <p><input type="submit" value='post' /></p>
+<br/>
+        <tr><input type="submit" value='post' /></tr>
+        </table>
     </form>
 
 {% endblock %}
