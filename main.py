@@ -17,16 +17,19 @@ class Blog(db.Model):
     post_id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120))
     content = db.Column(db.String(10000))
-    owner_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    owner_id = db.Column(db.Integer, db.ForeignKey('user.user_id'))
 
     def __init__(self, name, content, owner):
         self.name = name
         self.content = content
         self.owner = owner
 
+    def __repr__(self):
+        return '<Post %r>' % self.name
+
 class User(db.Model):
 
-    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(120))
     password = db.Column(db.String(120))
     blogs = db.relationship('Blog', backref='owner')
@@ -34,6 +37,16 @@ class User(db.Model):
     def __init__(self, username, password):
         self.username = username
         self.password = password
+
+    def __repr__(self):
+        return '<User %r>' % self.username
+
+def all_posts():
+    posts = Blog.query.all()
+    return posts
+def user_posts(user):
+    userposts = Blog.query.filter_by(owner_id = user.user_id).all()
+    return userposts
 
 @app.before_request
 def require_login():
@@ -43,17 +56,27 @@ def require_login():
 
 @app.route('/',methods=['POST', 'GET'])
 def index():
-    return redirect('/blog')
+    users = User.query.all()
+    if users:
+        return render_template('index.html', users=users)
+    else:
+        flash('The blog has no users! Sign up now!')
+        return redirect('/login')
 
 @app.route('/blog', methods=['POST', 'GET'])
 def show_blog():
-    posts = Blog.query.all()
     blog_id = request.args.get('id')
+    user_id = request.args.get('userID')
+    if user_id:
+        user = User.query.filter_by(user_id = user_id).first()
     blog_post = Blog.query.filter_by(post_id=blog_id).first()
+
     if blog_id:
         return render_template('blog_post.html',post=blog_post)
+    elif user_id:
+        return render_template('blog.html',posts=user_posts(user),user=user)
     else:
-        return render_template('blog.html', title="Blogz", posts=posts)
+        return render_template('blog.html', title="Blogz", posts=all_posts())
 
 
 @app.route('/newpost', methods=['GET','POST'])
@@ -76,29 +99,33 @@ def post_new():
         db.session.add(new_post)
         db.session.commit()
         new_id = str(new_post.post_id)
-        return redirect('/blog?id=' + new_id)
+        return redirect('/blog?id=' + new_id + '&user=' + str(owner.user_id))
 
     return render_template('new_post.html',title="New Post")
 
 @app.route('/login', methods=['POST', 'GET'])
 def login():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        user = User.query.filter_by(username = username).first()
+   # if session['username']:
+   #     flash("You are already logged in!",'error')
+   #     return redirect('/')
+   # else:
+        if request.method == 'POST':
+            username = request.form['username']
+            password = request.form['password']
+            user = User.query.filter_by(username = username).first()
 
-        if user and user.password == password:
-            session['username'] = username
-            flash("You are now logged in!")
-            return redirect('/newpost')
-        elif not user:
-            flash('User does not exist', 'error')
-            return render_template('login.html')
-        elif user.password != password:
-            flash('Password is incorrect','error')
-            return render_template('login.html')
+            if user and user.password == password:
+                session['username'] = username
+                flash("You are now logged in!")
+                return redirect('/newpost')
+            elif not user:
+                flash('User does not exist', 'error')
+                return render_template('login.html')
+            elif user.password != password:
+                flash('Password is incorrect','error')
+                return render_template('login.html')
 
-    return render_template('login.html')
+        return render_template('login.html')
 
 @app.route('/signup', methods=['POST', 'GET'])
 def signup():
@@ -109,7 +136,7 @@ def signup():
 
         # TODO - validate user's data
 
-        existing_user = User.query.filter_by(username = username).first()
+        existing_user = User.query.filter_by(username=username).first()
 
         if not username or not password or not verify:
             flash('Please complete all fields', 'error')
@@ -138,7 +165,7 @@ def logout():
         del session['username']
         return redirect('/blog')
     else:
-        flash('You are not logged in!', 'error')
+        flash("You can't log out if you are not logged in!", 'error')
         return redirect('/login')
 
 if __name__ == '__main__':
