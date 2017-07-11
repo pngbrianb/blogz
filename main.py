@@ -163,6 +163,7 @@ def logout():
     owner = User.query.filter_by(username=session['username']).first()
     if owner:
         del session['username']
+        flash("You have logged out")
         return redirect('/blog')
     else:
         flash("You can't log out if you are not logged in!", 'error')
